@@ -3,6 +3,7 @@ package com.devsuperior.dsmeta.services;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +13,9 @@ import org.springframework.stereotype.Service;
 
 import com.devsuperior.dsmeta.dto.SaleDTO;
 import com.devsuperior.dsmeta.dto.SaleMinDTO;
+import com.devsuperior.dsmeta.dto.SumaryDTO;
 import com.devsuperior.dsmeta.entities.Sale;
+import com.devsuperior.dsmeta.projections.SumaryMinProjection;
 import com.devsuperior.dsmeta.repositories.SaleRepository;
 
 @Service
@@ -20,12 +23,12 @@ public class SaleService {
 
 	@Autowired
 	private SaleRepository repository;
-	
+
 	public SaleMinDTO findById(Long id) {
 		Optional<Sale> result = repository.findById(id);
 		Sale entity = result.get();
 		return new SaleMinDTO(entity);
-	} 
+	}
 
 	public Page<SaleDTO> salesReport(String dataInicial, String dataFinal, String trechoNomeVendedor,
 			Pageable pageable) {
@@ -39,7 +42,20 @@ public class SaleService {
 		return result.map(x -> new SaleDTO(x));
 
 	}
+
+	public List<SumaryDTO> sumarySeller(String dataInicial, String dataFinal) {
+		LocalDate today = LocalDate.ofInstant(Instant.now(), ZoneId.systemDefault());
+
+		LocalDate max = dataFinal.equals("") ? today : LocalDate.parse(dataFinal);
+		LocalDate min = dataInicial.equals("") ? max.minusYears(1L) : LocalDate.parse(dataInicial);
+
+		List<SumaryMinProjection> list = repository.searchBySumary(min, max);
+		List<SumaryDTO> result = list.stream().map(x -> new SumaryDTO(x)).toList();
+		return result;
 	}
+
+}
+
 
 // Primeira Tentativa do relatorio Report , resolvi trabalhar com operadores ternarios.
 
